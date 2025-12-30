@@ -1,12 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-  if (!currentUser) {
-    location.href = "login.html";
-    return;
-  }
+  if (!currentUser) return location.href = "login.html";
 
-  // ELEMENTS
   const usernameSpan = document.getElementById("username");
   const playlistList = document.getElementById("playlistList");
   const playlistTitle = document.getElementById("playlistTitle");
@@ -21,62 +17,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const player = document.getElementById("player");
   const playerFrame = document.getElementById("playerFrame");
 
-  usernameSpan.innerText = currentUser.username;
+  usernameSpan.textContent = currentUser.username;
 
   logoutBtn.onclick = () => {
     sessionStorage.clear();
     location.href = "login.html";
   };
 
-  // DATA
   let playlists = JSON.parse(localStorage.getItem("playlists")) || {};
-  if (!playlists[currentUser.username]) {
-    playlists[currentUser.username] = {};
-  }
+  playlists[currentUser.username] ??= {};
 
   let currentPlaylist = null;
   let currentSongs = [];
 
-  // PLAYER
-  function playVideoInside(videoId) {
-    player.classList.remove("d-none");
-    playerFrame.src =
-      "https://www.youtube.com/embed/" + videoId + "?autoplay=1";
-  }
-
-  // STARS
-  window.rateSong = function (videoId, value) {
-    const list = playlists[currentUser.username][currentPlaylist];
-    const song = list.find(s => s.videoId === videoId);
-    if (!song) return;
-
-    song.rating = value;
-    localStorage.setItem("playlists", JSON.stringify(playlists));
-    loadPlaylist(currentPlaylist);
-  };
-
-  function renderStars(song) {
-    const rating = song.rating || 0;
-    let html = "";
-
-    for (let i = 1; i <= 5; i++) {
-      html += `
-        <span
-          style="cursor:pointer;color:${i <= rating ? "#ffc107" : "#ccc"}"
-          onclick="rateSong('${song.videoId}', ${i})">
-          ★
-        </span>
-      `;
-    }
-    return html;
-  }
-
-  // PLAYLISTS
   function renderPlaylists() {
     playlistList.innerHTML = "";
     const names = Object.keys(playlists[currentUser.username]);
 
-    if (names.length === 0) {
+    if (!names.length) {
       playlistList.innerHTML =
         `<li class="list-group-item text-muted">אין פלייליסטים</li>`;
       return;
@@ -84,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     names.forEach(name => {
       const li = document.createElement("li");
-      li.className = "list-group-item list-group-item-action text-center fw-semibold";
-      li.innerText = name;
+      li.className = "list-group-item list-group-item-action text-center";
+      li.textContent = name;
       li.onclick = () => loadPlaylist(name);
       playlistList.appendChild(li);
     });
@@ -93,20 +51,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadPlaylist(name) {
     currentPlaylist = name;
-    currentSongs = [...playlists[currentUser.username][name]];
-    playlistTitle.innerText = name;
+    currentSongs = playlists[currentUser.username][name];
+    playlistTitle.textContent = name;
     renderSongs(currentSongs);
   }
 
   function renderSongs(list) {
     songsDiv.innerHTML = "";
-    songsCount.innerText = `Songs: ${list.length}`;
-
-    if (list.length === 0) {
-      songsDiv.innerHTML =
-        `<p class="text-muted">No songs in this playlist</p>`;
-      return;
-    }
+    songsCount.textContent = `Songs: ${list.length}`;
 
     list.forEach(song => {
       const col = document.createElement("div");
@@ -114,7 +66,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       col.innerHTML = `
         <div class="card h-100">
-          <img src="${song.thumbnail}" class="card-img-top">
+          <img src="${song.thumbnail || 'https://via.placeholder.com/320x180'}"
+               class="card-img-top">
           <div class="card-body">
             <h6>${song.title}</h6>
 
@@ -130,8 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      col.querySelector(".btn-primary").onclick = () =>
-        playVideoInside(song.videoId);
+      col.querySelector(".btn-primary").onclick = () => {
+        player.classList.remove("d-none");
+        playerFrame.src =
+          `https://www.youtube.com/embed/${song.videoId}?autoplay=1`;
+      };
 
       col.querySelector(".btn-danger").onclick = () => {
         playlists[currentUser.username][currentPlaylist] =
@@ -146,7 +102,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // SEARCH
+  function renderStars(song) {
+    let html = "";
+    const rating = song.rating || 0;
+
+    for (let i = 1; i <= 5; i++) {
+      html += `
+        <span style="cursor:pointer;color:${i <= rating ? "#ffc107" : "#ccc"}"
+              onclick="rateSong('${song.videoId}', ${i})">★</span>`;
+    }
+    return html;
+  }
+
+  window.rateSong = (id, value) => {
+    const song =
+      playlists[currentUser.username][currentPlaylist]
+        .find(s => s.videoId === id);
+    song.rating = value;
+    localStorage.setItem("playlists", JSON.stringify(playlists));
+    loadPlaylist(currentPlaylist);
+  };
+
+  sortSelect.onchange = () => {
+    const sorted = [...currentSongs].sort((a, b) =>
+      sortSelect.value === "rating"
+        ? (b.rating || 0) - (a.rating || 0)
+        : a.title.localeCompare(b.title)
+    );
+    renderSongs(sorted);
+  };
+
   searchInput.oninput = () => {
     const q = searchInput.value.toLowerCase();
     renderSongs(currentSongs.filter(s =>
@@ -154,58 +139,32 @@ document.addEventListener("DOMContentLoaded", () => {
     ));
   };
 
-  // SORT
-  sortSelect.onchange = () => {
-    let sorted = [...currentSongs];
-
-    if (sortSelect.value === "az") {
-      sorted.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortSelect.value === "za") {
-      sorted.sort((a, b) => b.title.localeCompare(a.title));
-    } else if (sortSelect.value === "rating") {
-      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }
-
-    renderSongs(sorted);
-  };
-
-  // DELETE PLAYLIST
   deletePlaylistBtn.onclick = () => {
     if (!currentPlaylist) return;
     if (!confirm("למחוק את הפלייליסט?")) return;
 
     delete playlists[currentUser.username][currentPlaylist];
     localStorage.setItem("playlists", JSON.stringify(playlists));
-
     currentPlaylist = null;
-    playlistTitle.innerText = "בחרי פלייליסט";
     songsDiv.innerHTML = "";
-    songsCount.innerText = "Songs: 0";
-    player.classList.add("d-none");
+    playlistTitle.textContent = "בחרי פלייליסט";
     renderPlaylists();
   };
 
-  // ADD PLAYLIST
-  const addModal = new bootstrap.Modal(
+  const modal = new bootstrap.Modal(
     document.getElementById("addPlaylistModal")
   );
-  const newPlaylistName = document.getElementById("newPlaylistName");
-  const confirmAddPlaylist = document.getElementById("confirmAddPlaylist");
 
-  newPlaylistBtn.onclick = () => {
-    newPlaylistName.value = "";
-    addModal.show();
-  };
+  newPlaylistBtn.onclick = () => modal.show();
 
-  confirmAddPlaylist.onclick = () => {
-    const name = newPlaylistName.value.trim();
+  document.getElementById("confirmAddPlaylist").onclick = () => {
+    const name =
+      document.getElementById("newPlaylistName").value.trim();
     if (!name) return alert("יש להזין שם");
-    if (playlists[currentUser.username][name])
-      return alert("פלייליסט כבר קיים");
 
     playlists[currentUser.username][name] = [];
     localStorage.setItem("playlists", JSON.stringify(playlists));
-    addModal.hide();
+    modal.hide();
     renderPlaylists();
   };
 

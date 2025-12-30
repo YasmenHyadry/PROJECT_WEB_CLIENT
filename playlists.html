@@ -10,16 +10,21 @@
 
 <body class="bg-light">
 
+<script>
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+  if (!currentUser) location.href = "login.html";
+</script>
+
 <!-- NAVBAR -->
 <nav class="navbar navbar-light bg-white border-bottom mb-4">
   <div class="container-fluid">
-    <h4 class="mb-0">Playlists</h4>
+    <h5 class="mb-0">Playlists</h5>
 
     <div class="d-flex align-items-center gap-2">
       <span>Hello <strong id="username"></strong></span>
 
-      <a href="search.html" class="btn btn-outline-primary btn-sm">
-        Search
+      <a href="search.html" class="btn btn-outline-secondary btn-sm">
+        BACK
       </a>
 
       <button class="btn btn-outline-danger btn-sm" id="logoutBtn">
@@ -36,10 +41,15 @@
     <aside class="col-md-4 col-lg-3">
       <div class="card shadow-sm">
         <div class="card-body">
+
           <h6 class="mb-3">הספרייה שלי</h6>
 
-          <button class="btn btn-success w-100 mb-3" id="newPlaylistBtn">
+          <button class="btn btn-success w-100 mb-2" id="newPlaylistBtn">
             + פלייליסט חדש
+          </button>
+
+          <button class="btn btn-primary w-100 mb-3" id="playPlaylistBtn">
+            ▶ Play Playlist
           </button>
 
           <ul id="playlistList" class="list-group"></ul>
@@ -58,36 +68,35 @@
           </div>
 
           <!-- PLAYER -->
-          <div id="player" class="mb-4 d-none">
-            <div class="ratio ratio-16x9">
-              <iframe id="playerFrame"
-                      src=""
-                      allow="autoplay; encrypted-media"
-                      allowfullscreen>
-              </iframe>
-            </div>
+          <div id="player" class="mb-3 d-none">
+            <iframe
+              id="playerFrame"
+              width="100%"
+              height="400"
+              allow="autoplay; encrypted-media"
+              allowfullscreen>
+            </iframe>
           </div>
 
           <!-- CONTROLS -->
           <div class="row g-2 mb-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
               <input type="text"
                      id="searchInPlaylist"
                      class="form-control"
                      placeholder="Search in playlist...">
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
               <select id="sortSelect" class="form-select">
                 <option value="az">A-Z</option>
-                <option value="za">Z-A</option>
-                <option value="rating">Rating ⭐</option>
+                <option value="rating">Rating</option>
               </select>
             </div>
 
             <div class="col-md-4">
               <button class="btn btn-outline-danger w-100" id="deletePlaylistBtn">
-                Delete
+                Delete Playlist
               </button>
             </div>
           </div>
@@ -101,7 +110,7 @@
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- ADD PLAYLIST MODAL -->
 <div class="modal fade" id="addPlaylistModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
