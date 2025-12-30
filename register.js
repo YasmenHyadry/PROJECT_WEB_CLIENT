@@ -1,4 +1,4 @@
-document.getElementById("registerForm").addEventListener("submit", function (e) {
+document.getElementById("registerForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
   const username = document.getElementById("username").value.trim();
@@ -12,30 +12,18 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
     return;
   }
 
-  // ===== קריאת משתמשים קיימים =====
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-
-  // ===== בדיקת שם משתמש קיים =====
-  const userExists = users.some(user => user.username === username);
-  if (userExists) {
-    alert("שם המשתמש כבר קיים במערכת");
-    return;
-  }
-
   // ===== בדיקת סיסמה =====
   const hasLetter = /[a-zA-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[^a-zA-Z0-9]/.test(password);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
 
   if (
     password.length < 6 ||
     !hasLetter ||
     !hasNumber ||
-    !hasSpecialChar
+    !hasSpecial
   ) {
-    alert(
-      "הסיסמה חייבת להכיל לפחות 6 תווים, אות אחת, מספר אחד ותו מיוחד"
-    );
+    alert("הסיסמה חייבת להכיל לפחות 6 תווים, אות, מספר ותו מיוחד");
     return;
   }
 
@@ -45,24 +33,36 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
     return;
   }
 
-  // ===== בדיקת URL לתמונה (אם הוזן) =====
+  // ===== בדיקת URL לתמונה =====
   if (imageUrl && !imageUrl.startsWith("http")) {
     alert("יש להזין כתובת URL תקינה לתמונה");
     return;
   }
 
-  // ===== יצירת משתמש חדש =====
-  const newUser = {
-    username,
-    password,
-    imageUrl
-  };
+  // ===== שליחה לשרת =====
+  try {
+    const response = await fetch("http://localhost:3000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        password,
+        imageUrl
+      })
+    });
 
-  users.push(newUser);
-  localStorage.setItem("users", JSON.stringify(users));
+    const data = await response.json();
 
-  // ===== סיום מוצלח =====
-  alert("ההרשמה בוצעה בהצלחה");
-  window.location.href = "login.html";
+    if (!response.ok) {
+      alert(data.message);
+      return;
+    }
+
+    alert("ההרשמה בוצעה בהצלחה");
+    window.location.href = "login.html";
+
+  } catch (err) {
+    alert("שגיאה בחיבור לשרת");
+    console.error(err);
+  }
 });
- 
