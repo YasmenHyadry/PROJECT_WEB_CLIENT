@@ -145,31 +145,48 @@ document.getElementById("addToPlaylistBtn").onclick = () => {
 
 // FAVORITES
 function toggleFavorite(video, btn, card) {
-  const key = "favorites_" + currentUser.username;
-  let favorites = JSON.parse(localStorage.getItem(key)) || [];
+  const playlists = JSON.parse(localStorage.getItem("playlists")) || {};
+  playlists[currentUser.username] ??= {};
+  playlists[currentUser.username]["Favorites"] ??= [];
 
-  const index = favorites.findIndex(v => v.videoId === video.videoId);
+  const favList = playlists[currentUser.username]["Favorites"];
+
+  const index = favList.findIndex(v => v.videoId === video.videoId);
 
   if (index === -1) {
-    favorites.push(video);
-    btn.className = "btn btn-sm btn-danger";
-    btn.innerHTML = "❤️ Added ✓";
+    // ➕ הוספה ל-Favorites
+    favList.push({
+      videoId: video.videoId,
+      title: video.title,
+      thumbnail: video.thumbnail,
+      rating: 0
+    });
+
+    btn.classList.remove("btn-outline-danger");
+    btn.classList.add("btn-danger");
+    btn.innerHTML = "Added ✓";
 
     const badge = document.createElement("div");
-    badge.className = "position-absolute top-0 end-0 m-2 bg-success text-white rounded-circle d-flex align-items-center justify-content-center";
+    badge.className =
+      "position-absolute top-0 end-0 m-2 bg-success text-white " +
+      "rounded-circle d-flex align-items-center justify-content-center";
     badge.style.width = "28px";
     badge.style.height = "28px";
     badge.textContent = "✓";
     card.appendChild(badge);
 
   } else {
-    favorites.splice(index, 1);
-    btn.className = "btn btn-sm btn-outline-danger";
-    btn.innerHTML = "❤️ Add to Favorites";
+    // ➖ הסרה מ-Favorites
+    favList.splice(index, 1);
+
+    btn.classList.remove("btn-danger");
+    btn.classList.add("btn-outline-danger");
+    btn.innerHTML = "Add to Favorites";
 
     const badge = card.querySelector(".bg-success");
     if (badge) badge.remove();
   }
 
-  localStorage.setItem(key, JSON.stringify(favorites));
+  localStorage.setItem("playlists", JSON.stringify(playlists));
 }
+
