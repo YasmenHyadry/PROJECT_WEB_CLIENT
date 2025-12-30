@@ -14,13 +14,18 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
         return;
     }
 
-    // בדיקת סיסמה: מינימום 6 תווים, אות אחת ומספר אחד
-    if (
-        password.length < 6 ||
-        !/[a-zA-Z]/.test(password) ||
-        !/[0-9]/.test(password)
-    ) {
-        alert("הסיסמה חייבת להכיל לפחות 6 תווים, אות אחת ומספר אחד");
+    // בדיקת סיסמה:
+    // לפחות 6 תווים, אות אחת, מספר אחד ותו מיוחד
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+
+    if (!passwordRegex.test(password)) {
+        alert(
+            "הסיסמה חייבת להכיל:\n" +
+            "- לפחות 6 תווים\n" +
+            "- לפחות אות אחת\n" +
+            "- לפחות מספר אחד\n" +
+            "- לפחות תו מיוחד (!@#$ וכו')"
+        );
         return;
     }
 
@@ -46,11 +51,11 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
 
     // יצירת משתמש חדש
     const newUser = {
-        username: username,
-        firstName: firstName,
-        lastName: lastName,
-        imageUrl: imageUrl,
-        password: password
+        username,
+        firstName,
+        lastName,
+        imageUrl,
+        password
     };
 
     users.push(newUser);
