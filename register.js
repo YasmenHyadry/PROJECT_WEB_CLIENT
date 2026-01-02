@@ -1,14 +1,24 @@
-document.getElementById("registerForm").addEventListener("submit", async function (e) {
+document.getElementById("registerForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const username = document.getElementById("username").value.trim();
+  const firstName = document.getElementById("firstName").value.trim();
   const imageUrl = document.getElementById("imageUrl").value.trim();
   const password = document.getElementById("password").value;
   const confirmPassword = document.getElementById("confirmPassword").value;
 
   // ===== בדיקת שדות חובה =====
-  if (!username || !password || !confirmPassword) {
+  if (!username || !firstName || !password || !confirmPassword) {
     alert("יש למלא את כל שדות החובה");
+    return;
+  }
+
+  // ===== קריאת משתמשים קיימים =====
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+
+  // ===== בדיקת שם משתמש קיים =====
+  if (users.some(u => u.username === username)) {
+    alert("שם המשתמש כבר קיים במערכת");
     return;
   }
 
@@ -23,7 +33,7 @@ document.getElementById("registerForm").addEventListener("submit", async functio
     !hasNumber ||
     !hasSpecial
   ) {
-    alert("הסיסמה חייבת להכיל לפחות 6 תווים, אות, מספר ותו מיוחד");
+    alert("הסיסמה חייבת להכיל לפחות 6 תווים, אות אחת, מספר אחד ותו מיוחד");
     return;
   }
 
@@ -33,36 +43,24 @@ document.getElementById("registerForm").addEventListener("submit", async functio
     return;
   }
 
-  // ===== בדיקת URL לתמונה =====
+  // ===== בדיקת URL לתמונה (אם קיים) =====
   if (imageUrl && !imageUrl.startsWith("http")) {
     alert("יש להזין כתובת URL תקינה לתמונה");
     return;
   }
 
-  // ===== שליחה לשרת =====
-  try {
-    const response = await fetch("http://localhost:3000/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        password,
-        imageUrl
-      })
-    });
+  // ===== שמירת משתמש =====
+  const newUser = {
+    username,
+    firstName,
+    imageUrl,
+    password
+  };
 
-    const data = await response.json();
+  users.push(newUser);
+  localStorage.setItem("users", JSON.stringify(users));
 
-    if (!response.ok) {
-      alert(data.message);
-      return;
-    }
-
-    alert("ההרשמה בוצעה בהצלחה");
-    window.location.href = "login.html";
-
-  } catch (err) {
-    alert("שגיאה בחיבור לשרת");
-    console.error(err);
-  }
+  // ===== סיום =====
+  alert("ההרשמה בוצעה בהצלחה");
+  window.location.href = "login.html";
 });
